@@ -138,7 +138,9 @@ pipeline {
 
                     def requestPayload = [
                         api_key: "${env.TESTING_FARM_API_KEY}",
-                        test: [:],
+                        test: [
+                            tmt: repoUrlAndRef,
+                        ],
                         environments: [
                             [
                                 arch: "x86_64",
@@ -146,24 +148,15 @@ pipeline {
                                     KOJI_TASK_ID: "${getIdFromArtifactId(artifactId: params.ARTIFACT_ID)}"
                                 ],
                                 os: [ compose: "${config.compose}" ],
-                                artifacts: artifacts
+                                artifacts: artifacts,
+                                tmt: [
+                                    context: tmtContext,
+                                ]
                             ]
                         ]
                     ]
-
-                    if (repoTests['type'] == 'sti') {
-                        // add playbooks to run
-                        requestPayload['test']['sti'] = repoUrlAndRef
-                        requestPayload['test']['sti']['playbooks'] = repoTests['files']
-                    } else {
-                        // tmt
-                        requestPayload['test']['fmf'] = repoUrlAndRef
-                        requestPayload['environments'][0]['tmt'] = [
-                            context: tmtContext
-                        ]
-                        if (params.TEST_PLAN) {
-                            requestPayload['test']['fmf']['name'] = params.TEST_PLAN
-                        }
+                    if (params.TEST_PLAN) {
+                        requestPayload['test']['tmt']['name'] = params.TEST_PLAN
                     }
 
                     hook = registerWebhook()
