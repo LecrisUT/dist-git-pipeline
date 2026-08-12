@@ -54,6 +54,7 @@ pipeline {
         string(name: 'DIST_GIT_BRANCH', defaultValue: '', trim: true, description: "Dist-git branch associated with the provided ARTIFACT_ID")
         string(name: 'TEST_REPO_URL', defaultValue: '', trim: true, description: '(optional) URL to the repository containing tests; followed by "#&lt;ref&gt;", where &lt;ref&gt; is a commit hash; Example: https://src.fedoraproject.org/tests/selinux#ff0784e36758f2fdce3201d907855b0dd74064f9')
         string(name: 'TEST_PLAN', defaultValue: '', trim: true, description: '(optional) name of the test plan to run; Example: /plans/regression')
+        booleanParam(name: 'MULTIHOST_PIPELINE', defaultValue: false, description: 'Use the new testing-farm multihost-pipeline')
     }
 
     environment {
@@ -108,6 +109,7 @@ pipeline {
                                     string(name: 'DIST_GIT_BRANCH', value: params.DIST_GIT_BRANCH),
                                     string(name: 'TEST_REPO_URL', value: params.TEST_REPO_URL),
                                     string(name: 'TEST_PLAN', value: plan),
+                                    booleanParam(name: 'MULTIHOST_PIPELINE', value: params.MULTIHOST_PIPELINE)
                                 ]
                             )
                         }
@@ -157,6 +159,14 @@ pipeline {
                     ]
                     if (params.TEST_PLAN) {
                         requestPayload['test']['tmt']['name'] = params.TEST_PLAN
+                    }
+                    if (params.MULTIHOST_PIPELINE) {
+                        requestPayload['settings'] = [
+                            pipeline: [
+                                type: "tmt-multihost",
+                            ]
+                        ]
+                        requestPayload['environments'][0]["tmt"]["policy"] = "fedora-ci"
                     }
 
                     hook = registerWebhook()
